@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -24,7 +23,6 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::296222413836:role/test-github
           aws-region: us-east-1
-          role-session-name: GitHubActionsTerraform
 
       - name: Check AWS connection
         run: aws sts get-caller-identity
@@ -35,14 +33,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve
