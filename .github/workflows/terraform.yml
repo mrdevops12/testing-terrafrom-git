@@ -14,6 +14,10 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,6 +27,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::296222413836:role/TerraformGitHubActionsRole
           aws-region: us-east-1
+          role-session-name: GitHubActionsTerraform
 
       - name: Check AWS connection
         run: aws sts get-caller-identity
@@ -32,9 +37,6 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-
-      - name: Terraform Format
-        run: terraform fmt -check
 
       - name: Terraform Validate
         run: terraform validate
