@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
@@ -18,39 +19,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Display GitHub OIDC claims
-        shell: bash
-        run: |
-          JWT=$(curl -sSf \
-            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
-            | jq -r '.value')
-
-          PAYLOAD=$(echo "$JWT" | cut -d "." -f2)
-
-          python3 - "$PAYLOAD" <<'PY'
-          import base64
-          import json
-          import sys
-
-          payload = sys.argv[1]
-          payload += "=" * (-len(payload) % 4)
-
-          claims = json.loads(
-              base64.urlsafe_b64decode(payload).decode()
-          )
-
-          print("aud =", claims.get("aud"))
-          print("sub =", claims.get("sub"))
-          print("repository =", claims.get("repository"))
-          print("repository_owner =", claims.get("repository_owner"))
-          print("ref =", claims.get("ref"))
-          print("environment =", claims.get("environment"))
-          PY
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: arn:aws:iam::296222413836:role/TerraformGitHubActionsRole
+          role-to-assume: arn:aws:iam::296222413836:role/test-github
           aws-region: us-east-1
           role-session-name: GitHubActionsTerraform
+
+      - name: Check AWS connection
+        run: aws sts get-caller-identity
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
